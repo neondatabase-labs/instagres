@@ -1,33 +1,53 @@
 {
-  "name": "instagres",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "build": "react-router build",
-    "dev": "react-router dev",
-    "start": "wrangler dev",
-    "typecheck": "react-router typegen && tsc --build --noEmit"
-  },
-  "dependencies": {
-    "@react-router/node": "^7.0.1",
-    "@react-router/serve": "^7.0.1",
-    "isbot": "^5.1.17",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-router": "^7.0.1"
-  },
-  "devDependencies": {
-    "@cloudflare/workers-types": "^4.20241112.0",
-    "@hiogawa/vite-node-miniflare": "0.1.1",
-    "@react-router/dev": "^7.0.1",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "autoprefixer": "^10.4.20",
-    "postcss": "^8.4.49",
-    "tailwindcss": "^3.4.15",
-    "typescript": "^5.6.3",
-    "vite": "^5.4.11",
-    "vite-tsconfig-paths": "^5.1.2",
-    "wrangler": "^3.87.0"
-  }
+	"name": "instagres",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"postinstall": "openapi-typescript https://neon.tech/api_spec/release/v2.json -o ./app/lib/neonSchema.gen.ts",
+		"build": "react-router build",
+		"dev": "dotenvx run -- react-router dev",
+		"start": "wrangler dev --live-reload --test-scheduled",
+		"typecheck": "react-router typegen && tsc --build --noEmit"
+	},
+	"dependencies": {
+		"@marsidev/react-turnstile": "^1.1.0",
+		"@neondatabase/serverless": "^0.10.4",
+		"@radix-ui/react-slot": "^1.1.0",
+		"@react-router/fs-routes": "^7.0.2",
+		"@react-router/node": "^7.0.1",
+		"@react-router/serve": "^7.0.1",
+		"class-variance-authority": "^0.7.1",
+		"clsx": "^2.1.1",
+		"drizzle-orm": "^0.37.0",
+		"isbot": "^5.1.17",
+		"lucide-react": "^0.464.0",
+		"openapi-fetch": "^0.13.3",
+		"react": "^18.3.1",
+		"react-dom": "^18.3.1",
+		"react-router": "^7.0.1",
+		"tailwind-merge": "^2.5.5",
+		"tailwindcss-animate": "^1.0.7",
+		"zod": "^3.23.8"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "1.9.4",
+		"@cloudflare/workers-types": "^4.20241112.0",
+		"@dotenvx/dotenvx": "^1.28.0",
+		"@hiogawa/vite-node-miniflare": "0.1.1",
+		"@react-router/dev": "^7.0.1",
+		"@tsconfig/strictest": "^2.0.5",
+		"@types/node": "^22.10.1",
+		"@types/react": "^18.3.12",
+		"@types/react-dom": "^18.3.1",
+		"autoprefixer": "^10.4.20",
+		"drizzle-kit": "^0.29.1",
+		"openapi-typescript": "^7.4.4",
+		"postcss": "^8.4.49",
+		"tailwindcss": "^3.4.15",
+		"tsx": "^4.19.2",
+		"typescript": "^5.6.3",
+		"vite": "^5.4.11",
+		"vite-tsconfig-paths": "^5.1.2",
+		"wrangler": "^3.92.0"
+	}
 }

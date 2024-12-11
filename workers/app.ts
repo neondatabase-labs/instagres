@@ -57,7 +57,7 @@ export default {
 		const databases = await db
 			.select({ project_id: databasesTable.neonProjectId })
 			.from(databasesTable)
-			.where(lt(databasesTable.createdAt, sql`now() - interval '10 minutes'`));
+			.where(lt(databasesTable.createdAt, sql`now() - interval '1 hour'`));
 
 		await Promise.all(
 			databases.map(({ project_id }) =>
@@ -69,6 +69,6 @@ export default {
 
 		await db
 			.delete(databasesTable)
-			.where(lt(databasesTable.createdAt, sql`now() - interval '10 minutes'`));
+			.where(lt(databasesTable.createdAt, sql`now() - interval '1 hour'`));
 	},
 } satisfies ExportedHandler<CloudflareWorkerEnv>;

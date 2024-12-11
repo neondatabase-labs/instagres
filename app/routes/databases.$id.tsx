@@ -116,6 +116,11 @@ const DbByIdPage = ({
 					</CardTitle>
 					<CardDescription>
 						It was created in {database.creationDurationMs}ms 🚀
+						<br />
+						—
+						<br />
+						It will self-destruct in 1 hour. We're working on a way for you to
+						transfer it to your Neon account.
 					</CardDescription>
 				</CardHeader>
 				<CardContent>

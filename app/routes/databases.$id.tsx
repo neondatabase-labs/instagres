@@ -120,7 +120,14 @@ const DbByIdPage = ({
 						—
 						<br />
 						It will self-destruct in 1 hour. We're working on a way for you to
-						transfer it to your Neon account.
+						transfer it to your{" "}
+						<a
+							className="underline text-foreground"
+							href="https://neon.tech/signup?ref=instagres.com"
+						>
+							Neon
+						</a>{" "}
+						account.
 					</CardDescription>
 				</CardHeader>
 				<CardContent>

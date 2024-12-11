@@ -9,7 +9,7 @@
 		"directory": "./build/client/"
 	},
 	"triggers": {
-		"crons": ["* * * * *"]
+		"crons": ["*/5 * * * *"]
 	},
 	"unsafe": {
 		"bindings": [

@@ -66,5 +66,9 @@ export default {
 				}),
 			),
 		);
+
+		await db
+			.delete(databasesTable)
+			.where(lt(databasesTable.createdAt, sql`now() - interval '10 minutes'`));
 	},
 } satisfies ExportedHandler<CloudflareWorkerEnv>;

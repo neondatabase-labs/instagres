@@ -107,24 +107,26 @@ const DbByIdPage = ({
 	loaderData: { database, turnstileSiteKey, fromCli },
 }: Route.ComponentProps) =>
 	database ? (
-		<div className="flex flex-col justify-center items-center min-h-screen p-4">
-			<Card>
+		<div className="flex flex-col justify-center items-center min-h-screen p-4  text-center">
+			<Card className="max-w-full">
 				<CardHeader>
-					<div className="w-fit m-auto text-green-600 text-2xl mb-4">
-						<CheckCircle2Icon size={36} />
-					</div>
-					<CardTitle>Your database is ready</CardTitle>
+					<CheckCircle2Icon className=" text-green-600 text-2xl m-auto mb-2 w-8 h-8" />
+					<CardTitle className="font-bold tracking-tight text-2xl">
+						Your database is ready
+					</CardTitle>
 					<CardDescription>
 						It was created in {database.creationDurationMs}ms 🚀
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<p className="text-sm font-medium leading-none mb-2">
-						Connection string:
-					</p>
-					<code className="max-w-full overflow-x-scroll relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold">
-						{database.connectionString}
-					</code>
+					<div className="flex items-center">
+						<p className="text-sm font-medium leading-none mr-2 flex-none">
+							Connection string:
+						</p>
+						<pre className="max-w-lg overflow-x-auto text-foreground  rounded-sm bg-muted flex-1 text-xs">
+							<div className="px-3 py-2 w-fit">{database.connectionString}</div>
+						</pre>
+					</div>
 				</CardContent>
 			</Card>
 			{fromCli && (
@@ -135,7 +137,7 @@ const DbByIdPage = ({
 		</div>
 	) : (
 		<div className="flex flex-col justify-center items-center min-h-screen p-4 text-center">
-			<h1 className="text-2xl font-extrabold tracking-tight lg:text-3xl my-6">
+			<h1 className="text-2xl font-bold tracking-tight my-6">
 				Just checking you're not a big bad bot...
 			</h1>
 			<div className="w-fit m-auto my-6 h-0">

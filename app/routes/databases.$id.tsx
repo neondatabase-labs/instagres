@@ -76,6 +76,7 @@ export const action = async ({
 		const { data, error } = await neon.POST("/projects", {
 			body: {
 				project: {
+					pg_version: 16,
 					name: `instagres-${id}`,
 					region_id: findClosestRegion({ lat: ipLatitude, lon: ipLongitude }),
 					settings: {

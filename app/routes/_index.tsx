@@ -20,13 +20,13 @@ const Home = () => (
 					.
 				</div>
 				<div className="my-4 flex flex-wrap">
-					<span className="mr-2">Here in your browser:</span>
+					<span className="mr-2">Here in your browser 🔮</span>
 					<a className="underline text-foreground" href="/new">
 						https://www.instagres.com/new
 					</a>
 				</div>
 				<div className="my-4 flex items-center">
-					<span className="mr-2 my-2">Or in your CLI:</span>
+					<span className="mr-2 my-2">Or in your CLI 📺</span>
 					<pre className="text-foreground px-3 py-1 rounded-sm bg-muted">
 						npx instagres
 					</pre>

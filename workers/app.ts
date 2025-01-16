@@ -1,16 +1,13 @@
+import { AwsClient } from "aws4fetch";
 import { lt, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-http";
+import { discovery } from "openid-client";
 import { createRequestHandler } from "react-router";
 import { databasesTable } from "~/db/schema";
 import neonApiClient from "~/lib/neonApiClient";
 
 declare module "react-router" {
-	export interface AppLoadContext {
-		db: ReturnType<typeof drizzle>;
-		TURNSTILE_SITE_KEY: string;
-		TURNSTILE_SECRET_KEY: string;
-		neon: ReturnType<typeof neonApiClient>;
-	}
+	export interface AppLoadContext extends ReturnType<typeof buildLoadContext> {}
 }
 
 const handler = createRequestHandler(
@@ -19,13 +16,31 @@ const handler = createRequestHandler(
 	import.meta.env.MODE,
 );
 
-interface CloudflareWorkerEnv {
-	DATABASE_URL?: string;
-	TURNSTILE_SITE_KEY?: string;
-	TURNSTILE_SECRET_KEY?: string;
-	NEON_API_KEY?: string;
-	RATE_LIMITER: RateLimit;
+interface DevEnv {
+	DEV_WEBHOOK_ORIGIN?: string;
 }
+
+const buildLoadContext = (env: CloudflareWorkerEnv & DevEnv) => ({
+	db: drizzle(env.DATABASE_URL),
+	TURNSTILE_SITE_KEY: env.TURNSTILE_SITE_KEY,
+	TURNSTILE_SECRET_KEY: env.TURNSTILE_SECRET_KEY,
+	neon: neonApiClient(env.NEON_API_KEY),
+	getNeonOAuthConfig: () =>
+		discovery(
+			new URL("https://oauth2.neon.tech"),
+			env.NEON_OAUTH_ID,
+			env.NEON_OAUTH_SECRET,
+		),
+	aws: {
+		client: new AwsClient({
+			accessKeyId: env.AWS_ACCESS_KEY_ID,
+			secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
+			region: env.AWS_REGION,
+		}),
+		LAMBDA_FN_API: `https://lambda.${env.AWS_REGION}.amazonaws.com/2015-03-31/functions`,
+	},
+	env,
+});
 
 export default {
 	fetch: async (req, env) => {
@@ -33,19 +48,7 @@ export default {
 		const { success } = await env.RATE_LIMITER.limit({ key: ipAddress });
 		if (!success) return new Response("Rate limit exceeded", { status: 429 });
 
-		if (!env.DATABASE_URL) throw new Error("DATABASE_URL is not set");
-		if (!env.TURNSTILE_SITE_KEY)
-			throw new Error("TURNSTILE_SITE_KEY is not set");
-		if (!env.TURNSTILE_SECRET_KEY)
-			throw new Error("TURNSTILE_SECRET_KEY is not set");
-		if (!env.NEON_API_KEY) throw new Error("NEON_API_KEY is not set");
-
-		return handler(req, {
-			db: drizzle(env.DATABASE_URL),
-			TURNSTILE_SITE_KEY: env.TURNSTILE_SITE_KEY,
-			TURNSTILE_SECRET_KEY: env.TURNSTILE_SECRET_KEY,
-			neon: neonApiClient(env.NEON_API_KEY),
-		});
+		return handler(req, buildLoadContext(env));
 	},
 
 	scheduled: async (_, env) => {

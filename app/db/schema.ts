@@ -1,5 +1,18 @@
 import { sql } from "drizzle-orm";
-import { integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+	integer,
+	pgEnum,
+	pgTable,
+	text,
+	timestamp,
+	uuid,
+} from "drizzle-orm/pg-core";
+
+export const claimStatus = pgEnum("claim_status", [
+	"UNCLAIMED",
+	"CLAIMED",
+	"CLAIMING",
+]);
 
 export const databasesTable = pgTable("databases", {
 	id: uuid().primaryKey(),
@@ -7,4 +20,7 @@ export const databasesTable = pgTable("databases", {
 	neonProjectId: text().notNull(),
 	creationDurationMs: integer().notNull(),
 	createdAt: timestamp({ withTimezone: true }).notNull().default(sql`now()`),
+	claimStatus: claimStatus().notNull().default("UNCLAIMED"),
+	claimedProject: text(),
+	claimError: text(),
 });

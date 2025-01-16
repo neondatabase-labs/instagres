@@ -60,12 +60,16 @@ const getDistance = (
 	return R * c; // Distance in km
 };
 
-export const findClosestRegion = (userCoords: Coords): RegionID => {
+export const findClosestRegion = (headers: Headers): RegionID => {
 	let closestRegionId: RegionID = "aws-us-east-1";
 	let minDistance = Number.POSITIVE_INFINITY;
 
+	// Default to Paris
+	const lon = Number(headers.get("cf-iplongitude")) || 2.4075;
+	const lat = Number(headers.get("cf-iplatitude")) || 48.8323;
+
 	for (const [key, region] of Object.entries(regions)) {
-		const distance = getDistance(userCoords, region.coords);
+		const distance = getDistance({ lat, lon }, region.coords);
 		if (distance < minDistance) {
 			minDistance = distance;
 			closestRegionId = key as RegionID;

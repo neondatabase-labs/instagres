@@ -174,10 +174,10 @@ const DbByIdPage = ({
 									Connection string:
 								</p>
 								<div className="rounded-sm overflow-clip relative min-w-0">
-									<CopyButton textToCopy={database.connectionString} />
+									<CopyButton textToCopy={database.connectionString.trim()} />
 									<pre className="max-w-lg overflow-x-scroll text-foreground bg-muted text-xs">
 										<div className="px-4 py-3 w-fit">
-											{database.connectionString}
+											{database.connectionString.trim()}
 										</div>
 									</pre>
 								</div>

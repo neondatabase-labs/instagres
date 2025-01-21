@@ -1,5 +1,11 @@
 # Instagres
 
+This is the source code for [Instagres](https://www.instagres.com),
+which gives you a signup-less Postgres Database from your browser or your CLI.
+Your database is transferable to your [Neon](https://neon.tech) account to keep it more that 1h.
+
+---
+
 Below is the template from React Router. We should probabaly add something more relevant.
 
 # Welcome to React Router!

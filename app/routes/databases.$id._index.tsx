@@ -128,7 +128,7 @@ const DbByIdPage = ({
 										<TriangleAlert className="mr-4 size-6 text-yellow-500 inline" />
 										<br />
 										<br />
-										Note that its connection string will change (we hope to fix
+										Note that the connection string will change (we hope to fix
 										this soon). <br /> Prepare to edit this in your app if
 										you've already used it.
 									</div>
@@ -161,8 +161,8 @@ const DbByIdPage = ({
 									in your Neon account.
 									<div className="my-3">—</div>
 									<div className="flex items-center justify-center">
-										<TriangleAlert className="mr-3 size-6 text-teal-500" /> Its
-										connection string has changed! Your should update that in
+										<TriangleAlert className="mr-3 size-6 text-teal-500" /> Your
+										connection string has changed! You should update it in
 										your app. This is the new one ⬇️
 									</div>
 								</div>
@@ -201,7 +201,7 @@ const DbByIdPage = ({
 								<div className="my-3">—</div>
 								<div className="flex items-center justify-center">
 									<TriangleAlert className="mr-3 size-6 text-teal-500" /> It
-									will self-destruct in 1 hour. To keep it:
+									Database will self-destruct in 1 hour. To keep it:
 								</div>
 							</div>
 							<form
@@ -252,9 +252,9 @@ const DbByIdPage = ({
 					</CardContent>
 				</Card>
 				<div className="text-sm text-muted-foreground mt-6">
-					If this page opened from you terminal, you may return to it now.
+					If this page opened from your terminal, you may return to it now.
 					<br />
-					But keep this window open to claim this database with your Neon
+					But keep this window open to claim the database with your Neon
 					account ⬆️
 				</div>
 			</div>
@@ -264,7 +264,7 @@ const DbByIdPage = ({
 	return (
 		<div className="flex flex-col justify-center items-center min-h-screen p-4 text-center">
 			<h1 className="text-2xl font-bold tracking-tight my-6">
-				Just checking you're not a big bad bot...
+				Checking that you're not a big bad bot...
 			</h1>
 			<div className="w-fit m-auto my-6 h-0">
 				<Turnstile

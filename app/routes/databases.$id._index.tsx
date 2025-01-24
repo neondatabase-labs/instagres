@@ -162,8 +162,8 @@ const DbByIdPage = ({
 									<div className="my-3">—</div>
 									<div className="flex items-center justify-center">
 										<TriangleAlert className="mr-3 size-6 text-teal-500" /> Your
-										connection string has changed! You should update it in
-										your app. This is the new one ⬇️
+										connection string has changed! You should update it in your
+										app. This is the new one ⬇️
 									</div>
 								</div>
 							</CardDescription>
@@ -200,7 +200,7 @@ const DbByIdPage = ({
 								It was created in {database.creationDurationMs}ms 🚀
 								<div className="my-3">—</div>
 								<div className="flex items-center justify-center">
-									<TriangleAlert className="mr-3 size-6 text-teal-500" /> It
+									<TriangleAlert className="mr-3 size-6 text-teal-500" />
 									Database will self-destruct in 1 hour. To keep it:
 								</div>
 							</div>
@@ -254,8 +254,8 @@ const DbByIdPage = ({
 				<div className="text-sm text-muted-foreground mt-6">
 					If this page opened from your terminal, you may return to it now.
 					<br />
-					But keep this window open to claim the database with your Neon
-					account ⬆️
+					But keep this window open to claim the database with your Neon account
+					⬆️
 				</div>
 			</div>
 		);

@@ -25,6 +25,7 @@
 		"lucide-react": "^0.464.0",
 		"openapi-fetch": "^0.13.3",
 		"openid-client": "^6.1.7",
+		"p-map": "^7.0.3",
 		"react": "^18.3.1",
 		"react-dom": "^18.3.1",
 		"react-router": "^7.0.1",

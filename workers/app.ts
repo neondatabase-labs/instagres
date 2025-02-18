@@ -2,6 +2,7 @@ import { AwsClient } from "aws4fetch";
 import { lt, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-http";
 import { discovery } from "openid-client";
+import pMap from "p-map";
 import { createRequestHandler } from "react-router";
 import { databasesTable } from "~/db/schema";
 import neonApiClient from "~/lib/neonApiClient";
@@ -62,12 +63,13 @@ export default {
 			.from(databasesTable)
 			.where(lt(databasesTable.createdAt, sql`now() - interval '1 hour'`));
 
-		await Promise.all(
-			databases.map(({ project_id }) =>
+		await pMap(
+			databases,
+			({ project_id }) =>
 				neon.DELETE("/projects/{project_id}", {
 					params: { path: { project_id } },
 				}),
-			),
+			{ concurrency: 50 },
 		);
 
 		await db

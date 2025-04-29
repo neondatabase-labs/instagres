@@ -1,11 +1,10 @@
-import { useInterval } from "@chakra-ui/react-use-interval";
 import {
 	Turnstile,
 	type TurnstileServerValidationResponse,
 } from "@marsidev/react-turnstile";
 import { eq } from "drizzle-orm";
-import { CheckCircle2Icon, DatabaseZap, TriangleAlert } from "lucide-react";
-import { redirect, useNavigate } from "react-router";
+import { CheckCircle2Icon, TriangleAlert } from "lucide-react";
+import { redirect } from "react-router";
 import { z } from "zod";
 import { Button } from "~/components/ui/button";
 import {
@@ -31,10 +30,15 @@ export const loader = async ({
 		.from(databasesTable)
 		.where(eq(databasesTable.id, id));
 
-	return {
-		database,
-		turnstileSiteKey: TURNSTILE_SITE_KEY,
-	};
+	if (!database) return { turnstileSiteKey: TURNSTILE_SITE_KEY };
+
+	if (database.claimStatus === "CLAIMED")
+		throw redirect(
+			`https://console.neon.tech/app/projects/${database.neonProjectId}`,
+			{ status: 301 },
+		);
+
+	return { database };
 };
 
 export const action = async ({
@@ -69,11 +73,11 @@ export const action = async ({
 		.where(eq(databasesTable.id, id));
 
 	if (!database) {
+		// Create project
 		const before = Date.now();
 		const { data, error } = await neon.POST("/projects", {
 			body: {
 				project: {
-					pg_version: 16,
 					name: `instagres-${id}`,
 					region_id: findClosestRegion(request.headers),
 					settings: {
@@ -90,200 +94,117 @@ export const action = async ({
 		const { project, connection_uris } = data;
 		if (!connection_uris[0])
 			throw new Response("No connection URI", { status: 500 });
+
+		// Create transfer request & claim URL
+		const { data: transferRequest, error: transferRequestError } =
+			await neon.POST("/projects/{project_id}/transfer_requests", {
+				params: { path: { project_id: project.id } },
+			});
+		if (transferRequestError) {
+			console.log(transferRequestError);
+			throw new Response("Failed to generate claim url", { status: 500 });
+		}
+		const claimCallbackUrl = `${new URL(request.url).origin}/databases/${id}/claim-callback`;
+		const claimUrl = `https://console.neon.tech/app/claim?p=${project.id}&tr=${transferRequest.id}&ru=${encodeURIComponent(claimCallbackUrl)}`;
+
 		await db.insert(databasesTable).values({
 			id,
 			neonProjectId: project.id,
 			connectionString: connection_uris[0]?.connection_uri,
 			creationDurationMs: after - before,
+			claimUrl,
 		});
 	}
 
 	return redirect(request.url, { status: 303 });
 };
 
+const Database = ({
+	database,
+}: { database: typeof databasesTable.$inferSelect }) => (
+	<div className="flex flex-col justify-center items-center min-h-screen p-4  text-center">
+		<Card className="max-w-full">
+			<CardHeader>
+				<CheckCircle2Icon className=" text-green-600 text-2xl m-auto mb-2 w-8 h-8" />
+				<CardTitle className="font-bold tracking-tight text-2xl">
+					Your database is ready
+				</CardTitle>
+				<CardDescription>
+					<div>
+						It was created in {database.creationDurationMs}ms 🚀
+						<div className="my-3">—</div>
+						<div className="flex items-center justify-center">
+							<TriangleAlert className="mr-3 size-6 text-teal-500" />
+							Database will self-destruct in 1 hour. To keep it:
+						</div>
+					</div>
+					<div className="my-4">
+						{/* claim url should be always defined in this case */}
+						<a href={database.claimUrl ?? ""}>
+							<Button
+								className="text-teal-500"
+								variant={"secondary"}
+								type="submit"
+							>
+								Transfer it to your Neon account
+							</Button>
+						</a>
+					</div>
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<div className="flex items-center">
+					<p className="text-sm font-medium leading-none mx-3 flex-none mb-1">
+						Connection string:
+					</p>
+					<div className="rounded-sm overflow-clip relative min-w-0">
+						<CopyButton textToCopy={database.connectionString} />
+						<pre className="max-w-lg overflow-x-scroll text-foreground bg-muted text-xs">
+							<div className="px-4 py-3 w-fit">{database.connectionString}</div>
+						</pre>
+					</div>
+				</div>
+			</CardContent>
+		</Card>
+		<div className="text-sm text-muted-foreground mt-6">
+			If this page opened from your terminal, you may return to it now.
+			<br />
+			But keep this window open to claim the database with your Neon account ⬆️
+		</div>
+	</div>
+);
+
+const Captcha = ({ turnstileSiteKey }: { turnstileSiteKey: string }) => (
+	<div className="flex flex-col justify-center items-center min-h-screen p-4 text-center">
+		<h1 className="text-2xl font-bold tracking-tight my-6">
+			Checking that you're not a big bad bot...
+		</h1>
+		<div className="w-fit m-auto my-6 h-0">
+			<Turnstile
+				siteKey={turnstileSiteKey}
+				onSuccess={(token) => {
+					const form = document.createElement("form");
+					form.method = "POST";
+					const input = document.createElement("input");
+					input.type = "hidden";
+					input.name = "token";
+					input.value = token;
+					form.appendChild(input);
+					document.body.appendChild(form);
+					form.submit();
+				}}
+			/>
+		</div>
+	</div>
+);
+
 const DbByIdPage = ({
 	loaderData: { database, turnstileSiteKey },
-}: Route.ComponentProps) => {
-	const navigate = useNavigate();
-	useInterval(() => {
-		if (database?.claimStatus === "CLAIMING") navigate(0);
-	}, 2000);
-
-	if (database) {
-		if (database.claimStatus === "CLAIMING")
-			return (
-				<div className="flex flex-col justify-center items-center min-h-screen p-4  text-center">
-					<Card className="max-w-full">
-						<CardHeader>
-							<DatabaseZap className=" text-yellow-500 text-2xl m-auto mb-2 w-8 h-8" />
-							<CardTitle className="font-bold tracking-tight text-2xl">
-								We're transfering your database
-							</CardTitle>
-							<CardDescription>
-								<div>
-									Hang tight, we'll tell you here once it's ready.
-									<br />
-									<br />
-									<div className="flex items-center text-start text-xs text-card-foreground">
-										<TriangleAlert className="mr-4 size-6 text-yellow-500 inline" />
-										<br />
-										<br />
-										Note that the connection string will change (we hope to fix
-										this soon). <br /> Prepare to edit this in your app if
-										you've already used it.
-									</div>
-								</div>
-							</CardDescription>
-						</CardHeader>
-					</Card>
-				</div>
-			);
-
-		if (database.claimStatus === "CLAIMED")
-			return (
-				<div className="flex flex-col justify-center items-center min-h-screen p-4  text-center">
-					<Card className="max-w-full">
-						<CardHeader>
-							<div className="text-3xl">🚀</div>
-							<CardTitle className="font-bold tracking-tight text-2xl">
-								Your database has been transferred!
-							</CardTitle>
-							<CardDescription>
-								<div>
-									Self destruct cancelled! 😊<br />
-									Now it's{" "}
-									<a
-										href={`https://console.neon.tech/app/projects/${database.claimedProject}`}
-										className="underline text-teal-500 font-bold"
-									>
-										here
-									</a>{" "}
-									in your Neon account.
-									<div className="my-3">—</div>
-									<div className="flex items-center justify-center">
-										<TriangleAlert className="mr-3 size-6 text-teal-500" /> Your
-										connection string has changed! You should update it in your
-										app. This is the new one ⬇️
-									</div>
-								</div>
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							<div className="flex items-center">
-								<p className="text-sm font-medium leading-none mx-3 flex-none mb-1">
-									Connection string:
-								</p>
-								<div className="rounded-sm overflow-clip relative min-w-0">
-									<CopyButton textToCopy={database.connectionString.trim()} />
-									<pre className="max-w-lg overflow-x-scroll text-foreground bg-muted text-xs">
-										<div className="px-4 py-3 w-fit">
-											{database.connectionString.trim()}
-										</div>
-									</pre>
-								</div>
-							</div>
-						</CardContent>
-					</Card>
-				</div>
-			);
-
-		return (
-			<div className="flex flex-col justify-center items-center min-h-screen p-4  text-center">
-				<Card className="max-w-full">
-					<CardHeader>
-						<CheckCircle2Icon className=" text-green-600 text-2xl m-auto mb-2 w-8 h-8" />
-						<CardTitle className="font-bold tracking-tight text-2xl">
-							Your database is ready
-						</CardTitle>
-						<CardDescription>
-							<div>
-								It was created in {database.creationDurationMs}ms 🚀
-								<div className="my-3">—</div>
-								<div className="flex items-center justify-center">
-									<TriangleAlert className="mr-3 size-6 text-teal-500" />
-									Database will self-destruct in 1 hour. To keep it:
-								</div>
-							</div>
-							<form
-								className="my-4"
-								method="POST"
-								action={`/databases/${database.id}/claim`}
-							>
-								<Button
-									className="text-teal-500"
-									variant={"secondary"}
-									type="submit"
-								>
-									Transfer it to your Neon account
-								</Button>
-							</form>
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<div className="flex items-center">
-							<p className="text-sm font-medium leading-none mx-3 flex-none mb-1">
-								Connection string:
-							</p>
-							<div className="rounded-sm overflow-clip relative min-w-0">
-								<CopyButton textToCopy={database.connectionString} />
-								<pre className="max-w-lg overflow-x-scroll text-foreground bg-muted text-xs">
-									<div className="px-4 py-3 w-fit">
-										{database.connectionString}
-									</div>
-								</pre>
-							</div>
-						</div>
-						{database.claimError && (
-							<div className="flex items-center flex-col mt-6">
-								<p className="text-sm mx-3 flex-none mb-3 text-start text-red-600">
-									Oops, there was an error transfering your database:
-									<br />
-									<span className="font-bold">- Try the transfer again ⬆️</span>
-									<br />- Or tell us in the feedback form in your Neon Account
-								</p>
-								<div className="rounded-sm overflow-clip relative min-w-0">
-									<CopyButton textToCopy={database.connectionString} />
-									<pre className="max-w-lg overflow-x-scroll text-foreground bg-muted text-xs">
-										<div className="px-4 py-3 w-fit">{database.claimError}</div>
-									</pre>
-								</div>
-							</div>
-						)}
-					</CardContent>
-				</Card>
-				<div className="text-sm text-muted-foreground mt-6">
-					If this page opened from your terminal, you may return to it now.
-					<br />
-					But keep this window open to claim the database with your Neon account
-					⬆️
-				</div>
-			</div>
-		);
-	}
-
-	return (
-		<div className="flex flex-col justify-center items-center min-h-screen p-4 text-center">
-			<h1 className="text-2xl font-bold tracking-tight my-6">
-				Checking that you're not a big bad bot...
-			</h1>
-			<div className="w-fit m-auto my-6 h-0">
-				<Turnstile
-					siteKey={turnstileSiteKey}
-					onSuccess={(token) => {
-						const form = document.createElement("form");
-						form.method = "POST";
-						const input = document.createElement("input");
-						input.type = "hidden";
-						input.name = "token";
-						input.value = token;
-						form.appendChild(input);
-						document.body.appendChild(form);
-						form.submit();
-					}}
-				/>
-			</div>
-		</div>
+}: Route.ComponentProps) =>
+	database ? (
+		<Database database={database} />
+	) : (
+		<Captcha turnstileSiteKey={turnstileSiteKey} />
 	);
-};
 
 export default DbByIdPage;

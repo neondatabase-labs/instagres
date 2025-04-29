@@ -1,7 +1,5 @@
-import { AwsClient } from "aws4fetch";
-import { lt, sql } from "drizzle-orm";
+import { and, eq, lt, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-http";
-import { discovery } from "openid-client";
 import pMap from "p-map";
 import { createRequestHandler } from "react-router";
 import { databasesTable } from "~/db/schema";
@@ -17,29 +15,11 @@ const handler = createRequestHandler(
 	import.meta.env.MODE,
 );
 
-interface DevEnv {
-	DEV_WEBHOOK_ORIGIN?: string;
-}
-
-const buildLoadContext = (env: CloudflareWorkerEnv & DevEnv) => ({
+const buildLoadContext = (env: CloudflareWorkerEnv) => ({
 	db: drizzle(env.DATABASE_URL),
 	TURNSTILE_SITE_KEY: env.TURNSTILE_SITE_KEY,
 	TURNSTILE_SECRET_KEY: env.TURNSTILE_SECRET_KEY,
 	neon: neonApiClient(env.NEON_API_KEY),
-	getNeonOAuthConfig: () =>
-		discovery(
-			new URL("https://oauth2.neon.tech"),
-			env.NEON_OAUTH_ID,
-			env.NEON_OAUTH_SECRET,
-		),
-	aws: {
-		client: new AwsClient({
-			accessKeyId: env.AWS_ACCESS_KEY_ID,
-			secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
-			region: env.AWS_REGION,
-		}),
-		LAMBDA_FN_API: `https://lambda.${env.AWS_REGION}.amazonaws.com/2015-03-31/functions`,
-	},
 	env,
 });
 
@@ -58,17 +38,26 @@ export default {
 		const db = drizzle(env.DATABASE_URL);
 		const neon = neonApiClient(env.NEON_API_KEY);
 
-		const databases = await db
+		const projectsToDelete = await db
 			.select({ project_id: databasesTable.neonProjectId })
 			.from(databasesTable)
-			.where(lt(databasesTable.createdAt, sql`now() - interval '1 hour'`));
+			.where(
+				and(
+					lt(databasesTable.createdAt, sql`now() - interval '1 hour'`),
+					eq(databasesTable.claimStatus, "UNCLAIMED"),
+				),
+			);
 
 		await pMap(
-			databases,
+			projectsToDelete,
 			({ project_id }) =>
-				neon.DELETE("/projects/{project_id}", {
-					params: { path: { project_id } },
-				}),
+				neon
+					.DELETE("/projects/{project_id}", {
+						params: { path: { project_id } },
+					})
+					.catch((err) =>
+						console.log("Warning: failed to delete project", project_id, err),
+					),
 			{ concurrency: 50 },
 		);
 

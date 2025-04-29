@@ -8,11 +8,7 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 
-export const claimStatus = pgEnum("claim_status", [
-	"UNCLAIMED",
-	"CLAIMED",
-	"CLAIMING",
-]);
+export const claimStatus = pgEnum("claim_status", ["UNCLAIMED", "CLAIMED"]);
 
 export const databasesTable = pgTable("databases", {
 	id: uuid().primaryKey(),
@@ -21,6 +17,5 @@ export const databasesTable = pgTable("databases", {
 	creationDurationMs: integer().notNull(),
 	createdAt: timestamp({ withTimezone: true }).notNull().default(sql`now()`),
 	claimStatus: claimStatus().notNull().default("UNCLAIMED"),
-	claimedProject: text(),
-	claimError: text(),
+	claimUrl: text().notNull(),
 });

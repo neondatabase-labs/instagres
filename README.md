@@ -1,3 +1,5 @@
+# DEPRECATED — see https://neon.new instead
+
 # Instagres
 
 This is the source code for [Instagres](https://www.instagres.com),
